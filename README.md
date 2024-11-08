@@ -7,7 +7,7 @@
 
 To set up the pre-processing environment, you need [RStudio](https://posit.co/download/rstudio-desktop/) with the [renv](https://rstudio.github.io/renv/) package installed.
 
-Open the `panel-lemanique-preprocessing.Rproj` file with RStudio and restore the dependencies from the lockfile using
+First, clone the repository. Then, open the `panel-lemanique-preprocessing.Rproj` file with RStudio and restore the dependencies from the lockfile using
 
 ```r
 renv::restore()
