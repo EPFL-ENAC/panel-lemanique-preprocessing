@@ -1,9 +1,9 @@
 source(here::here("R/utils.R"))
 
-labels_to_string <- function(index){
+labels_to_string <- function(data, index){
   tryCatch(
     {
-      obj <- get_labels(wave1_data[index])
+      obj <- get_labels(data[index])
       res = ""
       for (i in 1:length(row(obj[,"name"]))){
         temp <- paste(obj[i,"value"], obj[i, "name"], sep=":")
@@ -40,22 +40,8 @@ write_cell <- function(file_path, value) {
   }
 }
 
-main <- function(){
-  
-  #Gets raw data => needs read access to the LAUSR drive
-  folder <- "//enac1files.epfl.ch/LASUR/common/LaSUR/06 - Recherche/Dossier de travail IT4R/Enquête mobilité"
-  file <- "EPFL_vague1_pond_clean_240319.sav"
-  
-  if (!dir.exists(folder)) {
-    stop(
-      sprintf("Error: dir '%s' is not accessible. ", folder),
-      "Read rights to the LASUR drive are necessary to preprocess the data. "
-    )
-  }
-  
-  wave1_data <- haven::read_sav(file.path(folder, file))
-
-  output_path <- file.path(Sys.getenv("USERPROFILE"), "Documents/Lemanique Panel/Wave_1", "wave1.csv")
+documentation <- function(data){
+  output_path <- file.path(Sys.getenv("USERPROFILE"), "Documents/Lemanique Panel/Wave_1", "documentation_wave1.csv")
   
   write.table(t(c("question_code", "question_text", "question_labels")),
               file = output_path, 
@@ -67,12 +53,57 @@ main <- function(){
   options(total_columns = 3)
   
   #reads raw data and writes parsed data
-  for (i in 1:length(wave1_data)){
-    question_code <- colnames(wave1_data[i])
+  for (i in 1:ncol(data)){
+    question_code <- colnames(data[i])
     write_cell(output_path, question_code)
-    write_cell(output_path, gsub("[\r\n]", " ", attr(get(question_code, wave1_data), "label")))
-    write_cell(output_path, labels_to_string(i))
+    write_cell(output_path, gsub("[\r\n]", " ", attr(get(question_code, data), "label")))
+    write_cell(output_path, labels_to_string(data, i))
   }
+}
+
+
+full_data <- function(data){
+  
+  output_path <- file.path(Sys.getenv("USERPROFILE"), "Documents/Lemanique Panel/Wave_1", "full_data_wave1.csv")
+  
+  
+  
+  write.table(t(colnames(data)),
+              file = output_path, 
+              sep = ";", 
+              col.names = FALSE,
+              row.names = FALSE, 
+              append = TRUE)
+  options(current_column = 1)
+  options(total_columns = length(colnames(data)))
+  options(total_rows = length(rownames(data)))
+  
+  for (i in 1:length(rownames(data))){
+    for (ii in 1:length(colnames(data))){
+      write_cell(output_path, t(data[i,ii]))
+    }
+  }
+  
+}
+
+main <- function(){
+  
+  #Gets raw data => needs read access to the LAUSR drive
+folder <- "//enac1files.epfl.ch/LASUR/common/LaSUR/06 - Recherche/Dossier de travail IT4R/Enquête mobilité"
+  file <- "EPFL_vague1_pond_clean_240319.sav"
+  
+  if (!dir.exists(folder)) {
+    stop(
+      sprintf("Error: dir '%s' is not accessible. ", folder),
+      "Read rights to the LASUR drive are necessary to preprocess the data. "
+    )
+  }
+  
+  wave1_data <- haven::read_sav(file.path(folder, file))
+  
+  documentation(wave1_data)
+  
+  #full_data(wave1_data)
 }
 
 
