@@ -28,6 +28,20 @@ labels_to_string <- function(data, index){
   )
 }
 
+#' gets section name for a question
+#' @param question_number number of the question : Q10 => 10
+#' 
+#' @return string containing the section name for the question
+
+get_section <- function (question_number){
+  sections_start <- c(0, 12, 30, 37, 40, 61, 75, 77, 81, 85, 90, 107, 109, 115, 123, 129)
+  sections <- c("Permis, véhicules et abbonements", "Multi-résidence", "Pratiques et moyens de déplacements", "Loop Leman Express", "Mobilités pour le travail et études", "Stationnement et financement", "Subventionnement abo", "Mobilités hors du travail", 
+                "excursions", "Séjours", "Opinions", "Variables sociodémographiques 1/2", "Variabes sociodémographiques 2/2", "Variables sociodémographiques_ménage", "Opt-out")
+  for (i in 1:length(sections_start)){
+    if(question_number < sections_start[i]) return(sections[i])
+  }
+}
+
 #' Outputs csv documentation for a dataset incluing question_code, question_label and question_labels
 #' 
 #' @param data SPSS dataset
@@ -67,9 +81,10 @@ full_data <- function(data) {
 #' 
 #' @param data SPSS dataset
 
-participants <- function(data){
+write_files_participants <- function(data){
   output_path <- "data/wave1/paricipants.tsv"
 
+  columns <- c("IDNO","Pays","Groupe","GP_Age_source","Numéro_INSEE","Numéro_OFS","CP_source","Localité_source")
   NAs <- rep(NA_character_,nrow(data["IDNO"]))
   
   participants_code <- data$IDNO
@@ -98,9 +113,36 @@ participants <- function(data){
   missing_names <- c("weight", "titre_source")
   
   readr::write_tsv(result, output_path)
+  
+  something_label(data, columns, "participant")
 }
 
-questions <- function(data){
+#' preprocess question data
+#' @param data SPSS dataset
+
+write_files_questions <- function(data){
+  output_path <- "data/wave1/questions.tsv"
+  
+  columns <- c()
+  question_text <- c()
+  section_name <- c()
+  
+  for(i in colnames(data)){
+    if(stringr::str_detect(i, "^Q\\d*.*$")){
+      columns <- c(columns, i)
+      question_text <- c(question_text, gsub("\n","",attr(get(i, data), "label")))
+      section_name <- c(section_name, get_section(as.integer(stringr::str_extract(i,"\\d+"))))
+    }
+  }
+  result <- tibble::tibble(
+    question_code = columns,
+    question_text = question_text,
+    section_name =  section_name
+  )
+  
+  readr::write_tsv(result, output_path)
+  
+  something_label(data, columns, "questions")
   
 }
 
@@ -108,9 +150,10 @@ questions <- function(data){
 #' 
 #' @param data SPSS dataset
 
-survey_completion <- function(data){
+write_files_survey_completion <- function(data){
   output_path <- "data/wave1/survey_completion.tsv"
   
+  columns <- c("IDNO")
   NAs <- rep(NA_character_,nrow(data["IDNO"]))
   
   participant_code <- data$IDNO
@@ -128,7 +171,10 @@ survey_completion <- function(data){
   missing_names <- c("count_miss1", "count_miss2", "progress", "start_date", "end_date", "temps_minute", "flag_troll")
   
   readr::write_tsv(result, output_path)
+  
+  something_label(data, columns, "survey_completion")
 }
+
 
 #' outputs tsv file containing questions an their label
 #' 
@@ -143,6 +189,19 @@ something_label <- function(data, cols, name){
     dplyr::select(tidyselect::all_of(cols))
   
   result <- get_labels(cols_selected)
+  readr::write_tsv(result, output_path)
+}
+
+
+#' writes tsv file with all the section names inside
+write_file_section <- function(){
+  output_path <- "data/wave1/sections.tsv"
+  
+  result <- tibble::tibble(
+    section_name = c("Permis, véhicules et abbonements", "Multi-résidence", "Pratiques et moyens de déplacements", "Loop Leman Express", "Mobilités pour le travail et études", "Stationnement et financement", "Subventionnement abo", "Mobilités hors du travail", 
+                     "excursions", "Séjours", "Opinions", "Variables sociodémographiques 1/2", "Variabes sociodémographiques 2/2", "Variables sociodémographiques_ménage", "Opt-out")
+  )
+  
   readr::write_tsv(result, output_path)
 }
 
@@ -171,18 +230,11 @@ main <- function(){
     dir.create(here::here("data/wave1"), recursive = TRUE)
   }
   
-  personnes_columns <- c("IDNO","Pays","Groupe","GP_Age_source","Numéro_INSEE","Numéro_OFS","CP_source","Localité_source")
-  survey_completion_columns <- c("IDNO")
-  questions_columns <- filter(wave1_data, str_detect(colnames(wave1_data), "^Q\\d*.*$")) # TODO
-  sections <- c("Permis, véhicules et abbonements", "Multi-résidence", "Pratiques et moyens de déplacements", "Loop Leman Express", "Mobilités pour le travail et études", "Stationnement et financement", "Subventionnement abo", "Mobilités hors du travail", 
-                "excursions", "Séjours", "Opinions", "Variables sociodémographiques 1/2", "Variabes sociodémographiques 2/2", "Variables sociodémographiques_ménage", "Opt-out", "End of questionnaire")
-  sections_start <- c(0, 12, 30, 37, 240/40, 61, 75, 77, 81, 85, 90, 241/107, 109, 115, 123, 129)
   
-  participants(wave1_data)
-  something_label(wave1_data,personnes_columns,"participants")
-  survey_completion(wave1_data)
-  something_label(wave1_data, survey_completion_columns, "survey_completion")
-  
+  write_files_participants(wave1_data)
+  write_files_survey_completion(wave1_data)
+  write_files_questions(wave1_data)
+  write_file_section()
 }
 
 
