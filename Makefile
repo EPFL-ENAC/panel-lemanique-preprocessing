@@ -1,4 +1,4 @@
-.PHONY: preprocess_wave2 remove_data preprocess_data
+.PHONY: preprocess_wave2 remove_data preprocess_data preprocess_wave1
 
 preprocess_wave2:
 	Rscript R/preprocess_wave2.R
