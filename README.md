@@ -24,4 +24,4 @@ make preprocess_data
 ## Adding data preprocessing from a new wave or subproject
 
 1. Add a pre-processing script in `data_preprocessing/`
-2. Add a pre-processing rule to `data_preprocessing/Makefile` and include the rule as a dependency of the `preprocess_data` rule
+2. Add a pre-processing rule to `Makefile` and include the rule as a dependency of the `preprocess_data` rule
