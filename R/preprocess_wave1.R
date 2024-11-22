@@ -1,4 +1,8 @@
-source(here::here("R/utils.R"))
+# This script is used to preprocess the "raw" data from the first wave of the Lemanique Panel.
+# Running it will result in a collection of .tsv files that can be ingested in the PostgreSQL
+# database via the python ingestion script.
+
+(here::here("R/utils.R"))
 
 #' Creates a string from le labels of a question
 #'
@@ -6,7 +10,6 @@ source(here::here("R/utils.R"))
 #' @param index int representing index if the question
 #' 
 #' @return string
-
 labels_to_string <- function(data, index){
   tryCatch(
     {
@@ -84,10 +87,10 @@ full_data <- function(data) {
 write_files_participants <- function(data){
   output_path <- "data/wave1/paricipants.tsv"
 
-  columns <- c("IDNO","Pays","Groupe","GP_Age_source","Numéro_INSEE","Numéro_OFS","CP_source","Localité_source")
-  NAs <- rep(NA_character_,nrow(data["IDNO"]))
+  columns <- c("participant_code","Pays","Groupe","GP_Age_source","Numéro_INSEE","Numéro_OFS","CP_source","Localité_source")
+  NAs <- rep(NA_character_,nrow(data["participant_code"]))
   
-  participants_code <- data$IDNO
+  participants_code <- data$participant_code
   pays <- data$Pays
   group <- data$Groupe
   gp_age_source <- data$GP_Age_source
@@ -114,7 +117,7 @@ write_files_participants <- function(data){
   
   readr::write_tsv(result, output_path)
   
-  something_label(data, columns, "participant")
+  write_label_file(data, columns, "participant")
 }
 
 #' preprocess question data
@@ -142,7 +145,7 @@ write_files_questions <- function(data){
   
   readr::write_tsv(result, output_path)
   
-  something_label(data, columns, "questions")
+  write_label_file(data, columns, "questions")
   
 }
 
@@ -153,10 +156,10 @@ write_files_questions <- function(data){
 write_files_survey_completion <- function(data){
   output_path <- "data/wave1/survey_completion.tsv"
   
-  columns <- c("IDNO")
-  NAs <- rep(NA_character_,nrow(data["IDNO"]))
+  columns <- c("participant_code")
+  NAs <- rep(NA_character_,nrow(data["participant_code"]))
   
-  participant_code <- data$IDNO
+  participant_code <- data$participant_code
   
   result <- tibble::tibble(
                           participant_code = participant_code,
@@ -172,7 +175,7 @@ write_files_survey_completion <- function(data){
   
   readr::write_tsv(result, output_path)
   
-  something_label(data, columns, "survey_completion")
+  write_label_file(data, columns, "survey_completion")
 }
 
 
@@ -182,7 +185,7 @@ write_files_survey_completion <- function(data){
 #' @param cols list of all columns to be processed
 #' @param name string containing name of the output tsv file
 
-something_label <- function(data, cols, name){
+write_label_file <- function(data, cols, name){
   output_path <- paste("data/wave1/",name,"_labels.tsv",sep="")
   
   cols_selected <- data |>
@@ -205,6 +208,41 @@ write_file_section <- function(){
   readr::write_tsv(result, output_path)
 }
 
+#' preprocess answers of all participants
+#' 
+#' @param data SPSS dataset
+write_file_answers <- function(data){
+  output_path <- "data/wave1/responces.tsv"
+  
+  extra_colnames <- c("wgt_socio",	"wgt_cant_trim",	"wgt_agg_trim",	"wgt_cant_trim_gps",	"wgt_agg_trim_gps",	"wgt_cant_trim_v2",	"wgt_agg_trim_v2")
+  responses <- data |>
+    dplyr::select(
+      -all_of(c(participants_colnames[-1], extra_colnames))
+    ) |>
+    zap_all()
+  
+  response_texts <- pivot_responses(
+    responses,
+    id_column = "participant_code",
+    selection_type = "character", remove_nas = TRUE, names_to = "question_code",
+    values_to = "response_text"
+  ) |>
+    remove_escapeseqs()
+  
+  response_values <- pivot_responses(
+    responses,
+    id_column = "participant_code",
+    selection_type = "numeric", remove_NAs = TRUE, names_to = "question_code",
+    values_to = "response_value"
+  )
+  
+  responses <- response_values |>
+    dplyr::bind_rows(response_texts)
+  
+  readr::write_tsv(responses, output_path)
+  
+}
+
 #' reads dataset and calls specific documentation functions
 
 main <- function(){
@@ -222,19 +260,23 @@ main <- function(){
   
   wave1_data <- haven::read_sav(file.path(folder, file))
   
-  #documentation(wave1_data)
-  
-  #full_data(wave1_data)
+  wave1_data <- wave1_data |>
+    dplyr::rename(
+      participant_code = IDNO
+    )
   
   if (!dir.exists(here::here("data/wave1"))) {
     dir.create(here::here("data/wave1"), recursive = TRUE)
   }
   
+  #documentation(wave1_data)
+  #full_data(wave1_data)
   
   write_files_participants(wave1_data)
   write_files_survey_completion(wave1_data)
   write_files_questions(wave1_data)
   write_file_section()
+  write_file_answers(wave1_data)
 }
 
 
