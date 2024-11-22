@@ -133,14 +133,14 @@ responses <- wave2_data |>
 
 response_texts <- pivot_responses(
   responses,
-  selection_type = "character", remove_NAs = TRUE, names_to = "question_code",
+  selection_type = "character", remove_nas = TRUE, names_to = "question_code",
   values_to = "response_text"
 ) |>
   remove_escapeseqs()
 
 response_values <- pivot_responses(
   responses,
-  selection_type = "numeric", remove_NAs = TRUE, names_to = "question_code",
+  selection_type = "numeric", remove_nas = TRUE, names_to = "question_code",
   values_to = "response_value"
 )
 

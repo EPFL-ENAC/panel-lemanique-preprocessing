@@ -111,6 +111,7 @@ pivot_responses <- function(
     remove_nas = TRUE,
     names_to = "name",
     values_to = "value") {
+  rlang::check_dots_used()
   assertthat::assert_that(
     rlang::is_string(id_column), rlang::is_string(names_to), rlang::is_string(values_to)
   )
