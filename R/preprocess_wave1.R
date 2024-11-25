@@ -2,7 +2,7 @@
 # Running it will result in a collection of .tsv files that can be ingested in the PostgreSQL
 # database via the python ingestion script.
 
-(here::here("R/utils.R"))
+source(here::here("R/utils.R"))
 
 #' Creates a string from le labels of a question
 #'
@@ -87,15 +87,15 @@ full_data <- function(data) {
 write_files_participants <- function(data){
   output_path <- "data/wave1/paricipants.tsv"
 
-  columns <- c("participant_code","Pays","Groupe","GP_Age_source","Numéro_INSEE","Numéro_OFS","CP_source","Localité_source")
+  columns <- c("participant_code","pays","pays","gp_age_source","numero_insee","numero_ofs","CP_source","Localité_source")
   NAs <- rep(NA_character_,nrow(data["participant_code"]))
   
   participants_code <- data$participant_code
-  pays <- data$Pays
-  group <- data$Groupe
-  gp_age_source <- data$GP_Age_source
-  numero_INSEE <- data$Numéro_INSEE
-  numero_OFS <- data$Numéro_OFS
+  pays <- data$pays
+  group <- data$group
+  gp_age_source <- data$gp_age_source
+  numero_INSEE <- data$numero_insee
+  numero_OFS <- data$numero_ofs
   weight <- NAs 
   titre_source <- NAs 
   cp_source <- data$CP_source
@@ -106,8 +106,8 @@ write_files_participants <- function(data){
                            pays = pays,
                            group = group,
                            gp_age_source = gp_age_source,
-                           numero_INSEE = numero_INSEE,
-                           numero_OFS = numero_OFS,
+                           numero_insee = numero_INSEE,
+                           numero_ofs = numero_OFS,
                            weight = weight,
                            titre_source = titre_source,
                            cp_source = cp_source,
@@ -192,6 +192,15 @@ write_label_file <- function(data, cols, name){
     dplyr::select(tidyselect::all_of(cols))
   
   result <- get_labels(cols_selected)
+  
+  if(name == "questions"){
+    result <- result |>
+      dplyr::rename(
+        question_code = variable_name,
+        label = name
+      )
+  }
+  
   readr::write_tsv(result, output_path)
 }
 
@@ -214,6 +223,7 @@ write_file_section <- function(){
 write_file_answers <- function(data){
   output_path <- "data/wave1/responces.tsv"
   
+  participants_colnames <- c("participant_code","pays","pays","gp_age_source","numero_insee","numero_ofs","CP_source","Localité_source")
   extra_colnames <- c("wgt_socio",	"wgt_cant_trim",	"wgt_agg_trim",	"wgt_cant_trim_gps",	"wgt_agg_trim_gps",	"wgt_cant_trim_v2",	"wgt_agg_trim_v2")
   responses <- data |>
     dplyr::select(
@@ -262,7 +272,12 @@ main <- function(){
   
   wave1_data <- wave1_data |>
     dplyr::rename(
-      participant_code = IDNO
+      participant_code = IDNO,
+      pays = Pays,
+      group = Groupe,
+      gp_age_source = GP_Age_source,
+      numero_insee = Numéro_INSEE,
+      numero_ofs = Numéro_OFS
     )
   
   if (!dir.exists(here::here("data/wave1"))) {
@@ -281,3 +296,9 @@ main <- function(){
 
 
 main()
+
+#' TODO(Q)
+#' 
+#' - fix col names in survey_completion_labels, (survey_completion), (section), question_labels(V), (question) => placement or name or both lol
+#' - fix (or not) double col bc of coma in section name
+#' - check if responce_text in responces.tsv works as intended
