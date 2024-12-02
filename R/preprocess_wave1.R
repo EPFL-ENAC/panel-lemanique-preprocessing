@@ -200,7 +200,17 @@ write_label_file <- function(data, cols, name){
         label = name
       )
   }
+  empty <- 1
+  for(i in result){
+    if(length(i) != 0){
+      empty = 0
+      break
+    }
+  }
   
+  if(empty){
+    result <- tibble::tibble()
+  }
   readr::write_tsv(result, output_path)
 }
 
@@ -223,11 +233,11 @@ write_file_section <- function(){
 write_file_answers <- function(data){
   output_path <- "data/wave1/responces.tsv"
   
-  participants_colnames <- c("participant_code","pays","pays","gp_age_source","numero_insee","numero_ofs","CP_source","Localité_source")
+  participants_colnames <- c("group","pays","gp_age_source","numero_insee","numero_ofs","CP_source","Localité_source")
   extra_colnames <- c("wgt_socio",	"wgt_cant_trim",	"wgt_agg_trim",	"wgt_cant_trim_gps",	"wgt_agg_trim_gps",	"wgt_cant_trim_v2",	"wgt_agg_trim_v2")
   responses <- data |>
     dplyr::select(
-      -all_of(c(participants_colnames[-1], extra_colnames))
+      -all_of(c(participants_colnames, extra_colnames))
     ) |>
     zap_all()
   
@@ -242,18 +252,20 @@ write_file_answers <- function(data){
   response_values <- pivot_responses(
     responses,
     id_column = "participant_code",
-    selection_type = "numeric", remove_NAs = TRUE, names_to = "question_code",
+    selection_type = "numeric", remove_nas = TRUE, names_to = "question_code",
     values_to = "response_value"
   )
   
   responses <- response_values |>
-    dplyr::bind_rows(response_texts)
+    dplyr::bind_rows(response_texts) |> 
+    dplyr::arrange(participant_code)
+  
+  
   
   readr::write_tsv(responses, output_path)
-  
 }
 
-#' reads dataset and calls specific documentation functions
+#' reads dataset and calls specific preprocessing functions
 
 main <- function(){
   
@@ -296,9 +308,3 @@ main <- function(){
 
 
 main()
-
-#' TODO(Q)
-#' 
-#' - fix col names in survey_completion_labels, (survey_completion), (section), question_labels(V), (question) => placement or name or both lol
-#' - fix (or not) double col bc of coma in section name
-#' - check if responce_text in responces.tsv works as intended
