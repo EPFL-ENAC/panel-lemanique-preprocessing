@@ -227,6 +227,13 @@ write_file_section <- function(){
   readr::write_tsv(result, output_path)
 }
 
+#' removes whitespaces at the begining of a string
+#'
+#' @param x string
+remove_whitespace <- function(x){
+  stringr::str_remove_all(x, "(^\\s+|\\s+$)")
+}
+
 #' preprocess answers of all participants
 #' 
 #' @param data SPSS dataset
@@ -240,6 +247,12 @@ write_file_answers <- function(data){
       -all_of(c(participants_colnames, extra_colnames))
     ) |>
     zap_all()
+  
+  # proble with : CP_actuel(all numbers but in text somehow), Q19CH_1_1 (sometimes string and sometimes numbers in dataset), Q19CH_2_1 (7050-011 ??)
+  
+  responses <- responses |> 
+    dplyr::mutate(dplyr::across(tidyselect::where(is.character), ~ remove_whitespace(.x))) |>
+    dplyr::mutate(dplyr::across(tidyselect::everything(), ~ readr::parse_guess(as.character(.x))))
   
   response_texts <- pivot_responses(
     responses,
