@@ -37,7 +37,7 @@ labels_to_string <- function(data, index){
 #' @return string, section name for the question
 
 get_section <- function (question_number){
-  sections_start <- c(0, 12, 30, 37, 40, 61, 75, 77, 81, 85, 90, 107, 109, 115, 123, 129)
+  sections_start <- c(12, 30, 37, 40, 61, 75, 77, 81, 85, 90, 107, 109, 115, 123, 129)
   sections <- c("Permis, véhicules et abbonements", "Multi-résidence", "Pratiques et moyens de déplacements", "Loop Leman Express", "Mobilités pour le travail et études", "Stationnement et financement", "Subventionnement abo", "Mobilités hors du travail", 
                 "excursions", "Séjours", "Opinions", "Variables sociodémographiques 1/2", "Variabes sociodémographiques 2/2", "Variables sociodémographiques_ménage", "Opt-out")
   for (i in 1:length(sections_start)){
@@ -313,11 +313,11 @@ main <- function(){
   #documentation(wave1_data)
   #full_data(wave1_data)
   
-  write_files_participants(wave1_data)
-  write_files_survey_completion(wave1_data)
+  #write_files_participants(wave1_data)
+  #write_files_survey_completion(wave1_data)
   write_files_questions(wave1_data)
-  write_file_section()
-  write_file_answers(wave1_data)
+  #write_file_section()
+  #write_file_answers(wave1_data)
 }
 
 
