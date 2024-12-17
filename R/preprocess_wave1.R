@@ -4,10 +4,10 @@
 
 source(here::here("R/utils.R"))
 
-#' Creates a string from le labels of a question
+#' Creates a string from a question's labels
 #'
-#' @param data SPSS dataset
-#' @param index int representing index if the question
+#' @param data tibble?, SPSS dataset
+#' @param index int, index of the question
 #' 
 #' @return string
 labels_to_string <- function(data, index){
@@ -32,9 +32,9 @@ labels_to_string <- function(data, index){
 }
 
 #' gets section name for a question
-#' @param question_number number of the question : Q10 => 10
+#' @param question_number int, number of the question : Q10 => 10
 #' 
-#' @return string containing the section name for the question
+#' @return string, section name for the question
 
 get_section <- function (question_number){
   sections_start <- c(0, 12, 30, 37, 40, 61, 75, 77, 81, 85, 90, 107, 109, 115, 123, 129)
@@ -47,7 +47,7 @@ get_section <- function (question_number){
 
 #' Outputs csv documentation for a dataset incluing question_code, question_label and question_labels
 #' 
-#' @param data SPSS dataset
+#' @param data tibble?, SPSS dataset
 
 documentation <- function(data){
   output_path <- file.path(Sys.getenv("USERPROFILE"), "Documents/Lemanique Panel/Wave_1", "documentation_wave1.csv")
@@ -82,7 +82,7 @@ full_data <- function(data) {
 
 #' preprocess participants data
 #' 
-#' @param data SPSS dataset
+#' @param data tibble?, SPSS dataset
 
 write_files_participants <- function(data){
   output_path <- "data/wave1/paricipants.tsv"
@@ -121,7 +121,8 @@ write_files_participants <- function(data){
 }
 
 #' preprocess question data
-#' @param data SPSS dataset
+#' 
+#' @param data tibble?, SPSS dataset
 
 write_files_questions <- function(data){
   output_path <- "data/wave1/questions.tsv"
@@ -151,7 +152,7 @@ write_files_questions <- function(data){
 
 #' preprocess survey completion data
 #' 
-#' @param data SPSS dataset
+#' @param data tibble?, SPSS dataset
 
 write_files_survey_completion <- function(data){
   output_path <- "data/wave1/survey_completion.tsv"
@@ -181,9 +182,9 @@ write_files_survey_completion <- function(data){
 
 #' outputs tsv file containing questions an their label
 #' 
-#' @param data SPSS dataset
-#' @param cols list of all columns to be processed
-#' @param name string containing name of the output tsv file
+#' @param data tibble?, SPSS dataset
+#' @param cols string vector, all columns to be processed
+#' @param name string, name of the output tsv file
 
 write_label_file <- function(data, cols, name){
   output_path <- paste("data/wave1/",name,"_labels.tsv",sep="")
@@ -236,7 +237,7 @@ remove_whitespace <- function(x){
 
 #' preprocess answers of all participants
 #' 
-#' @param data SPSS dataset
+#' @param data tibble?, SPSS dataset
 write_file_answers <- function(data){
   output_path <- "data/wave1/responces.tsv"
   
@@ -248,7 +249,7 @@ write_file_answers <- function(data){
     ) |>
     zap_all()
   
-  # proble with : CP_actuel(all numbers but in text somehow), Q19CH_1_1 (sometimes string and sometimes numbers in dataset), Q19CH_2_1 (7050-011 ??)
+  # problem with : CP_actuel(all numbers but in text somehow), Q19CH_1_1 (sometimes string and sometimes numbers in dataset), Q19CH_2_1 (7050-011 ??)
   
   responses <- responses |> 
     dplyr::mutate(dplyr::across(tidyselect::where(is.character), ~ remove_whitespace(.x))) |>
